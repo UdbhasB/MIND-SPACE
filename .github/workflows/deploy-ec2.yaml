@@ -1,0 +1,56 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main  # Change to your branch name if different
+
+jobs:
+  deploy:
+    name: Build & Deploy via SSH
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key.pem
+          chmod 600 ~/.ssh/deploy_key.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy project files to EC2
+        run: |
+          rsync -avz --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='__pycache__' \
+            --exclude='.env' \
+            -e "ssh -i ~/.ssh/deploy_key.pem -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/app/
+
+      - name: Deploy with Docker Compose on EC2
+        run: |
+          ssh -i ~/.ssh/deploy_key.pem \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            
+            cd ~/app
+
+            # Pull latest images and rebuild
+            docker compose -f docker-compose.prod.yml down --remove-orphans
+            docker compose -f docker-compose.prod.yml build --no-cache
+            docker compose -f docker-compose.prod.yml up -d
+
+            # Clean up unused Docker resources
+            docker system prune -f
+
+            echo "✅ Deployment complete!"
+            docker compose -f docker-compose.prod.yml ps
+          EOF
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          curl -f http://${{ secrets.EC2_HOST }} || echo "⚠️ Health check failed - check logs"
