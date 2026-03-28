@@ -271,7 +271,7 @@ Full interactive docs available at `http://localhost:8000/docs` (Swagger UI).
 - All passwords hashed with **bcrypt** (via passlib)
 - Authentication via **JWT (HS256)** — tokens expire after 7 days
 - Each user can only access their own journal entries (enforced at DB query level)
-- CORS restricted to `http://localhost:3000` in development — update `allow_origins` in `main.py` for production
+- CORS restricted to `http://localhost:3000` in development — update `allow_origins` in `main.py` for
 
 ---
 
