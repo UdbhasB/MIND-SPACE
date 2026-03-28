@@ -54,19 +54,19 @@ jobs:
             ls -la
 
             echo "🐳 Stopping existing containers..."
-            sudo docker compose -f docker-compose.prod.yml down --remove-orphans || true
+            sudo docker compose -f docker-compose.yml down --remove-orphans || true
 
             echo "🔨 Building images..."
-            sudo docker compose -f docker-compose.prod.yml build --no-cache
+            sudo docker compose -f docker-compose.yml build --no-cache
 
             echo "🚀 Starting containers..."
-            sudo docker compose -f docker-compose.prod.yml up -d
+            sudo docker compose -f docker-compose.yml up -d
 
             echo "🧹 Cleaning up..."
             sudo docker system prune -f
 
             echo "✅ Deployment complete!"
-            sudo docker compose -f docker-compose.prod.yml ps
+            sudo docker compose -f docker-compose.yml ps
           EOF
 
       - name: Health check
